@@ -75,13 +75,25 @@ while True:
                 upperLimitResize = tuple(np.add(rectangles.EndPoint, (imageProps.defaultAreaPickerSize,imageProps.defaultAreaPickerSize)))         
                 
                 while x <= upperLimit[0] and x >= lowerLimit[0] and y <= upperLimit[1] and y >= lowerLimit[1]:
-                    imageProps.moveRectangle(window, graph, idx)
-                    imageProps.eraseRectangle(window, graph, idx)
-                    break
-                            
+                    event, values = window.read()
+                    x, y = values["-GRAPH-"]
+                    lowerLimit = tuple(np.subtract(rectangles.StartPoint, (imageProps.defaultAreaPickerSize,imageProps.defaultAreaPickerSize)))
+                    upperLimit = tuple(np.add(rectangles.StartPoint, (imageProps.defaultAreaPickerSize,imageProps.defaultAreaPickerSize)))
+
+                    imageProps.moveRectangle(window, graph, event, idx)
+                    imageProps.eraseRectangle(window, graph, event, idx)
+
                 while x <= upperLimitResize[0] and x >= lowerLimitResize[0] and y <= upperLimitResize[1] and y >= lowerLimitResize[1]:
-                    imageProps.resizeRectangle(window, idx, graph)
-                    break
+                    event, values = window.read()
+                    x, y = values["-GRAPH-"]
+                    lowerLimitResize = tuple(np.subtract(rectangles.EndPoint, (imageProps.defaultAreaPickerSize,imageProps.defaultAreaPickerSize)))
+                    upperLimitResize = tuple(np.add(rectangles.EndPoint, (imageProps.defaultAreaPickerSize,imageProps.defaultAreaPickerSize)))
+
+                    imageProps.resizeRectangle(window, idx, event, graph)
+                
+                cursor = "arrow"
+                window.find_element("-GRAPH-").set_cursor(cursor)
+
     else:
         pass
         print("unhandled event", event, values)
