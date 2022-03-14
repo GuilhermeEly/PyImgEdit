@@ -42,7 +42,6 @@ class imageProperties():
                 prior_rect = graph.draw_rectangle(start_point, end_point, line_color='red')
 
         if event.endswith('+UP'):  # The drawing has ended because mouse up
-            
             if start_point!=None and end_point!=None:
                 graph.draw_image(self.imageLocation, location=(0,270))
                 #Inversão de ordem do ponto inicial para que a referência inicial seja sempre o canto esquerdo superior
