@@ -1,13 +1,15 @@
 import numpy as np
 from typing import NamedTuple
+import os
+import json
 
 class componentsSelection(NamedTuple):
     StartPoint: tuple
     EndPoint: tuple
-    label: str = ""
+    label: str = ''
 
 class imageProperties():
-    imageLocation = ""
+    imageLocation = ''
     selectedAreas = []
     dragging = False
     defaultAreaPickerSize = 15
@@ -16,18 +18,66 @@ class imageProperties():
     def __init__(self, imageLocation):
         self.imageLocation = imageLocation
 
-    def addArea(self, start_point, end_point):
-        self.selectedAreas.append(componentsSelection(start_point, end_point))
+    def addArea(self, start_point, end_point, label=''):
+        self.selectedAreas.append(componentsSelection(start_point, end_point, label))
 
     def returnAreaSelected(self):
         return self.selectedAreas
+
+    def updateImageFile(self, imageLocation, graph):
+        graph.erase()
+        self.imageLocation = imageLocation
+        graph.draw_image(self.imageLocation, location=(0,270))
+        for rectangles in self.returnAreaSelected():
+            graph.draw_rectangle(rectangles.StartPoint, rectangles.EndPoint, line_color='red')
+
+    def saveFile(self, filename):
+        data = {}
+
+        data['config'] = []
+
+        for idx, rectangles in enumerate(self.returnAreaSelected()):
+            data['config'].append({
+                'coordinate':{
+                    'Label': idx,
+                    'StartPoint':{
+                        'x':    int(rectangles.StartPoint[0]),
+                        'y':    int(rectangles.StartPoint[1])
+                    },
+                    'EndPoint': {
+                        'x':    int(rectangles.EndPoint[0]),
+                        'y':    int(rectangles.EndPoint[1])
+                    }
+                }
+            })
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'w+') as f:
+            json.dump(data, f, indent=4)
+
+    def loadFile(self, filename, graph):
+        try:
+            with open(r'C:\Users\gely\Desktop\Desenvolvimento\Python\PyImageEdit\products\IO103\IO103.json', 'r') as f:
+                data = json.load(f)
+
+            for coordinates in data['config']:
+                start_point = end_point = None
+
+                start_point = (coordinates['coordinate']['StartPoint']['x'], coordinates['coordinate']['StartPoint']['y'])
+                end_point = (coordinates['coordinate']['EndPoint']['x'], coordinates['coordinate']['EndPoint']['y'])
+                self.addArea(start_point, end_point)
+
+            for rectangles in self.returnAreaSelected():
+                    graph.draw_rectangle(rectangles.StartPoint, rectangles.EndPoint, line_color='red')
+
+        except Exception as e:
+            print("Não existem configurações para este PA.\n" + str(e))
 
     def drawImage(self, window, graph):
         start_point = end_point = prior_rect = None
         event, values = window.read()
         while not event.endswith('+UP'):
             
-            x, y = values["-GRAPH-"]
+            x, y = values['-GRAPH-']
             event, values = window.read()
             
             if not self.dragging:
@@ -60,8 +110,8 @@ class imageProperties():
                     self.addArea(start_point, end_point)
 
                 graph.delete_figure(prior_rect)
-                info = window["info"]
-                info.update(value=f"grabbed rectangle from {start_point} to {end_point}")
+                info = window['info']
+                info.update(value=f'grabbed rectangle from {start_point} to {end_point}')
                 start_point, end_point = None, None  # enable grabbing a new rect
 
                 for rectangles in self.returnAreaSelected():
@@ -70,18 +120,18 @@ class imageProperties():
 
     def moveRectangle(self, window, graph, event, idx):
         points = self.returnAreaSelected()
-        cursor = "fleur"
-        window.find_element("-GRAPH-").set_cursor(cursor)
+        cursor = 'fleur'
+        window.find_element('-GRAPH-').set_cursor(cursor)
 
         prior_rect = None
 
-        if event == "-GRAPH-":  # if there's a "Graph" event, then it's a mouse 
+        if event == '-GRAPH-':  # if there's a "Graph" event, then it's a mouse 
             rectSizeX = points[idx].EndPoint[0]-points[idx].StartPoint[0]
             rectSizeY = points[idx].EndPoint[1]-points[idx].StartPoint[1]  
             while not event.endswith('+UP'):
                 event, values = window.read(timeout=0)
 
-                newInitialPos = values["-GRAPH-"]
+                newInitialPos = values['-GRAPH-']
                 newEndPos = tuple(np.add(points[idx].StartPoint, (rectSizeX, rectSizeY)))
                 
                 points[idx] = points[idx]._replace(StartPoint = newInitialPos)
@@ -96,8 +146,8 @@ class imageProperties():
 
     def eraseRectangle(self, window, graph, event, idx):
         
-        cursor = "fleur"
-        window.find_element("-GRAPH-").set_cursor(cursor)
+        cursor = 'fleur'
+        window.find_element('-GRAPH-').set_cursor(cursor)
 
         prior_rect = None
 
@@ -114,15 +164,15 @@ class imageProperties():
 
     def resizeRectangle(self, window, idx, event, graph):
         points = self.returnAreaSelected()
-        cursor = "bottom_right_corner"
-        window.find_element("-GRAPH-").set_cursor(cursor)
+        cursor = 'bottom_right_corner'
+        window.find_element('-GRAPH-').set_cursor(cursor)
 
         prior_rect = None
 
-        if event == "-GRAPH-":  # if there's a "Graph" event, then it's a mouse 
+        if event == '-GRAPH-':  # if there's a "Graph" event, then it's a mouse 
             while not event.endswith('+UP'):
                 event, values = window.read()
-                x, y = values["-GRAPH-"]
+                x, y = values['-GRAPH-']
                 if (points[idx].StartPoint[0]+self.defaultAreaPickerSize < x) and (points[idx].StartPoint[1]-self.defaultAreaPickerSize > y):
                     points[idx] = points[idx]._replace(EndPoint = (x,y))
 
